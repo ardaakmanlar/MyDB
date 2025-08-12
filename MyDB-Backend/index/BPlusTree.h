@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <iostream>
 
-#define DEGREE 3
+#define DEGREE 128
 #define MAX_KEYS   ((DEGREE) - 1)           // Max keys in a node
 #define MIN_KEYS   (((DEGREE) + 1) / 2 - 1) // Min keys (non-root)
 #define MIN_CHILD  (((DEGREE) + 1) / 2)     // Min children (non-root)

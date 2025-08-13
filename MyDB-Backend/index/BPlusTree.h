@@ -66,6 +66,8 @@ public:
 	
 	bool insert(const std::pair<int, std::vector<std::string>>& value);
 
+	const std::pair<int, std::vector<std::string>>& search(int id)const;
+
 	void print()const;
 	
 	void printNode(const Node* node, int level) const;

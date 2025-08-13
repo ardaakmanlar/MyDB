@@ -83,6 +83,12 @@ BPlusTree::BPlusTree() : root(nullptr) {}
 bool BPlusTree::insert(const pair<int, vector<string>>& value) {
     if (!root) { root = new LeafNode(value); return true; }
 
+    const auto& found = search(value.first);
+    if (found.first != -1) {
+        cerr << "Insert failed: key " << value.first << " already exists.\n";
+        return false;
+    }
+
     Node* result = root->insert(value);
     if (!result) return true;
 
@@ -129,5 +135,40 @@ void BPlusTree::printNode(const Node* node, int level) const {
     if (node->getClass() == string("Internal")) {
         const InternalNode* in = static_cast<const InternalNode*>(node);
         for (auto child : in->ChildNodes) if (child) printNode(child, level + 1);
+    }
+}
+
+
+const pair<int, vector<string>>& BPlusTree::search(int id) const {
+    static const pair<int, vector<string>> notFound = { -1, {} };
+    if (!root) return notFound;
+
+    const Node* cur = root;
+
+    while (true) {
+        if (cur->getClass() == "Leaf") {
+            const auto& vals = cur->values;
+            auto it = std::lower_bound(
+                vals.begin(), vals.end(), id,
+                [](const auto& a, int key) { return a.first < key; }
+            );
+            if (it != vals.end() && it->first == id) {
+                return *it; 
+            }
+            return notFound; 
+        }
+        else {
+            const auto* inode = static_cast<const InternalNode*>(cur);
+
+            size_t idx = std::lower_bound(
+                inode->values.begin(), inode->values.end(), id,
+                [](const auto& a, int key) { return a.first < key; }
+            ) - inode->values.begin();
+
+            if (idx >= inode->ChildNodes.size() || inode->ChildNodes[idx] == nullptr) {
+                return notFound; 
+            }
+            cur = inode->ChildNodes[idx];
+        }
     }
 }

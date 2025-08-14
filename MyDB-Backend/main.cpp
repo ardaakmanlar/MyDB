@@ -8,8 +8,22 @@
 using namespace std;
 
 static pair<int, vector<string>> make_val(int k) {
-    vector<string> v; v.push_back(to_string(k));
+    vector<string> v;
+    v.push_back(to_string(k));
     return { k, v };
+}
+
+void print_first_n(BPlusTree& t, int n) {
+    int printed = 0;
+    for (int i = 1; printed < n; ++i) {
+        const auto& res = t.search(i);
+        if (res.first != -1) {
+            cout << res.first << " -> ";
+            for (auto& s : res.second) cout << s << " ";
+            cout << "\n";
+            ++printed;
+        }
+    }
 }
 
 int main() {
@@ -49,9 +63,25 @@ int main() {
     auto t1 = chrono::high_resolution_clock::now();
     auto ms = chrono::duration_cast<chrono::milliseconds>(t1 - t0).count();
 
-
     cout << "\nTotal inserted: " << (N1 + N2) << "\n";
-    cout << "Elapsed ms: " << ms << "\n";
+    cout << "Elapsed ms: " << ms << "\n\n";
+
+    cout << "First 10 keys before deletion:\n";
+    print_first_n(t, 10);
+
+    cout << "\nEnter key to delete: ";
+    int del_key;
+    cin >> del_key;
+
+    if (t.remove(del_key)) {
+        cout << "Key " << del_key << " deleted.\n";
+    }
+    else {
+        cout << "Key " << del_key << " not found.\n";
+    }
+
+    cout << "\nFirst 10 keys after deletion:\n";
+    print_first_n(t, 10);
 
     return 0;
 }

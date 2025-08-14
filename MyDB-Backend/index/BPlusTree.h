@@ -6,72 +6,70 @@
 #include <iostream>
 
 #define DEGREE 128
-#define MAX_KEYS   ((DEGREE) - 1)           // Max keys in a node
-#define MIN_KEYS   (((DEGREE) + 1) / 2 - 1) // Min keys (non-root)
-#define MIN_CHILD  (((DEGREE) + 1) / 2)     // Min children (non-root)
+#define MAX_KEYS   ((DEGREE) - 1)
+#define MIN_KEYS   (((DEGREE) + 1) / 2 - 1)
+#define MIN_CHILD  (((DEGREE) + 1) / 2)
 
+#define CHILD_COUNT(keys) ((keys) + 1)
+#define KEYS_COUNT(children) ((children) - 1)
 
-#define CHILD_COUNT(keys) ((keys) + 1)          // Child count from keys
-#define KEYS_COUNT(children) ((children) - 1)   // Keys count from children
+class InternalNode;
 
-
-class Node{
+class Node {
 public:
-	std::vector<std::pair<int, std::vector<std::string>>> values;
-	
-	Node();
-	Node(const std::pair<int, std::vector<std::string>>& value);
-	Node(std::vector<std::pair<int, std::vector<std::string>>> _values);
+    std::vector<std::pair<int, std::vector<std::string>>> values;
 
+    Node();
+    Node(const std::pair<int, std::vector<std::string>>& value);
+    Node(std::vector<std::pair<int, std::vector<std::string>>> _values);
 
-	virtual const std::string& getClass()const = 0;
+    virtual const std::string& getClass() const = 0;
+    virtual Node* insert(const std::pair<int, std::vector<std::string>>& value) = 0;
+    virtual bool remove(int key, InternalNode* parent, int parentIndex) = 0;
 
-	virtual Node* insert(const std::pair<int, std::vector<std::string>>& value) = 0;
+    virtual ~Node() = default;
 };
 
-class LeafNode: public Node {
+class LeafNode : public Node {
 public:
-	LeafNode* next;
+    LeafNode* next;
 
-	LeafNode();
-	LeafNode(const std::pair<int, std::vector<std::string>>& value);
-	LeafNode(std::vector<std::pair<int, std::vector<std::string>>> _values);
+    LeafNode();
+    LeafNode(const std::pair<int, std::vector<std::string>>& value);
+    LeafNode(std::vector<std::pair<int, std::vector<std::string>>> _values);
 
-	const std::string& getClass()const override;
-
-	Node* insert(const std::pair<int, std::vector<std::string>>& value) override;
+    const std::string& getClass() const override;
+    Node* insert(const std::pair<int, std::vector<std::string>>& value) override;
+    bool remove(int key, InternalNode* parent, int parentIndex) override;
 };
-
 
 class InternalNode : public Node {
 public:
-	std::vector<Node*> ChildNodes;
+    std::vector<Node*> ChildNodes;
 
-	InternalNode();
-	InternalNode(const std::pair<int, std::vector<std::string>>& value);
-	InternalNode(std::vector<std::pair<int, std::vector<std::string>>> _values);
+    InternalNode();
+    InternalNode(const std::pair<int, std::vector<std::string>>& value);
+    InternalNode(std::vector<std::pair<int, std::vector<std::string>>> _values);
 
-	const std::string& getClass()const override;
+    const std::string& getClass() const override;
+    Node* insert(const std::pair<int, std::vector<std::string>>& value) override;
+    bool remove(int key, InternalNode* parent, int parentIndex) override;
 
-	Node* insert(const std::pair<int, std::vector<std::string>>& value) override;
+    void borrowFromLeft(int idx);
+    void borrowFromRight(int idx);
+    void mergeChildren(int idx);
 };
 
-//Index should be positive.
-class BPlusTree{
+class BPlusTree {
 private:
-	Node* root;
+    Node* root;
 
 public:
-	BPlusTree();
-	
-	bool insert(const std::pair<int, std::vector<std::string>>& value);
+    BPlusTree();
 
-	const std::pair<int, std::vector<std::string>>& search(int id)const;
-
-	void print()const;
-	
-	void printNode(const Node* node, int level) const;
+    bool insert(const std::pair<int, std::vector<std::string>>& value);
+    const std::pair<int, std::vector<std::string>>& search(int id) const;
+    void print() const;
+    void printNode(const Node* node, int level) const;
+    bool remove(int key);
 };
-
-
- 

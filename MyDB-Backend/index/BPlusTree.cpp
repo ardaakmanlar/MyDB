@@ -175,7 +175,7 @@ bool BPlusTree::remove(int key) {
     return ok;
 }
 
-bool LeafNode::remove(int key, InternalNode* /*parent*/, int /*parentIndex*/) {
+bool LeafNode::remove(int key, InternalNode* , int ) {
     auto it = lower_bound(values.begin(), values.end(), key,
         [](const auto& a, int k) { return a.first < k; });
     if (it == values.end() || it->first != key) return false;

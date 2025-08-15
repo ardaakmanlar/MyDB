@@ -5,7 +5,7 @@
 #include <algorithm>
 #include <iostream>
 
-#define DEGREE 128
+#define DEGREE 3
 #define MAX_KEYS   ((DEGREE) - 1)
 #define MIN_KEYS   (((DEGREE) + 1) / 2 - 1)
 #define MIN_CHILD  (((DEGREE) + 1) / 2)

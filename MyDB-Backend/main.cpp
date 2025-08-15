@@ -32,9 +32,9 @@ int main() {
 
     BPlusTree t;
 
-    const int N1 = 50000;
-    const int N2 = 50000;
-    const int PRINT_EVERY = 10000;
+    const int N1 = 50;
+    const int N2 = 50;
+    const int PRINT_EVERY = 1000;
 
     auto t0 = chrono::high_resolution_clock::now();
 
@@ -66,22 +66,21 @@ int main() {
     cout << "\nTotal inserted: " << (N1 + N2) << "\n";
     cout << "Elapsed ms: " << ms << "\n\n";
 
-    cout << "First 10 keys before deletion:\n";
-    print_first_n(t, 10);
-
     cout << "\nEnter key to delete: ";
     int del_key;
     cin >> del_key;
+    for (size_t i = 0; i < 10; i++){
 
-    if (t.remove(del_key)) {
-        cout << "Key " << del_key << " deleted.\n";
+
+        if (t.remove(del_key)) {
+            cout << "Key " << del_key << " deleted.\n";
+        }
+        else {
+            cout << "Key " << del_key << " not found.\n";
+        }
+        del_key++;
     }
-    else {
-        cout << "Key " << del_key << " not found.\n";
-    }
 
-    cout << "\nFirst 10 keys after deletion:\n";
-    print_first_n(t, 10);
-
+    t.print();
     return 0;
 }

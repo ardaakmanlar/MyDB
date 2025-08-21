@@ -14,7 +14,7 @@
 Write these commands one by one in your terminal:
 
 ```bash
-git clone https://github.com/username/MyDB.git
+git clone https://github.com/ardaakmanlar/MyDB
 cd MyDB/core
 g++ -std=c++14 -o myDB.exe main.cpp Table.cpp BPlusTree.cpp
 ./myDB.exe

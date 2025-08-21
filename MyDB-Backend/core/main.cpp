@@ -1,4 +1,4 @@
-#include "./core/Table.h"
+#include "Table.h"
 #include <iostream>
 #include <sstream>
 #include <unordered_map>

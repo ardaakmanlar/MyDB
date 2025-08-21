@@ -18,7 +18,7 @@
     <ClInclude Include="core\Table.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="index\BPlusTree.h">
+    <ClInclude Include="core\BPlusTree.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -26,7 +26,7 @@
     <ClCompile Include="core\Table.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="index\BPlusTree.cpp">
+    <ClCompile Include="core\BPlusTree.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">

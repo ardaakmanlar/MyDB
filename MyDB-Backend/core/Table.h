@@ -2,29 +2,24 @@
 #include <string>
 #include <vector>
 #include <utility>
-#include <optional>
-#include "../index/BPlusTree.h"
-
+#include "BPlusTree.h"
+#include <iomanip> 
 
 class Table {
-public:
-    Table(std::string name,
-        std::vector<std::pair<std::string, std::string>> attributes);
-
-    const std::string& getName() const { return name; }
-    const std::vector<std::pair<std::string, std::string>>& getAttributes() const { return Attributes; }
-
-    bool insertRow(int key, const std::vector<std::string>& row);
-    std::optional<std::vector<std::string>> getRow(int key) const;
-
-    int columnIndex(const std::string& column) const;
-    void printLeafChain() const { tree.print(); }
-
 private:
     std::string name;
-    std::vector<std::pair<std::string, std::string>> Attributes;
+    std::vector<std::string> attributes;   
     BPlusTree tree;
 
-    bool validateRowShape(const std::vector<std::string>& row) const;
-    bool validateValueByType(const std::string& type, const std::string& value) const;
+public:
+    Table(std::string name, std::vector<std::string> attributes);
+
+    bool addRow(std::vector<std::string> row);
+    bool addRow(int id, std::vector<std::string> row);
+
+    void printTable(int n = 10) const;
+    void addAttribute(std::string attribute);           
+    std::vector<std::string> search(int id) const;
+    bool update(int id, std::vector<std::string> newRow);
+    bool deleteRow(int id);
 };

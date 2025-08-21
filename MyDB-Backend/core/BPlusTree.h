@@ -41,6 +41,9 @@ public:
     const std::string& getClass() const override;
     Node* insert(const std::pair<int, std::vector<std::string>>& value) override;
     bool remove(int key, InternalNode* parent, int parentIndex) override;
+
+    bool updateValue(int key, const std::vector<std::string>& newValues, int maxN = -1);
+
 };
 
 class InternalNode : public Node {
@@ -64,6 +67,8 @@ class BPlusTree {
 private:
     Node* root;
 
+
+    LeafNode* findLeaf(int key);
 public:
     BPlusTree();
 
@@ -72,4 +77,14 @@ public:
     void print() const;
     void printNode(const Node* node, int level) const;
     bool remove(int key);
+
+    bool update(int key, const std::vector<std::string>& newValues, int maxN = -1);
+    bool updateKey(int oldKey, int newKey, const std::vector<std::string>& newValues = {}, int maxN = -1);
+
+
+    void printRows() const;
+
+    std::vector<std::pair<int, std::vector<std::string>>> collect(int limit) const;
+
+
 };

@@ -185,15 +185,17 @@ bool LeafNode::remove(int key, InternalNode* , int ) {
 
 bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
     size_t idx = std::upper_bound(values.begin(), values.end(), key,
-        [](int k, const auto& a) { return k < a.first; })
+        [](int k, const std::pair<int, std::vector<std::string>>& a) { return k < a.first; })
         - values.begin();
+
+    if (idx >= ChildNodes.size() || ChildNodes[idx] == nullptr) return false;
 
     Node* childBefore = ChildNodes[idx];
 
     int oldFirst = INT_MIN;
-    bool wasLeaf = (childBefore->getClass() == "Leaf");
+    bool wasLeaf = (childBefore->getClass() == std::string("Leaf"));
     if (wasLeaf) {
-        auto* lf = static_cast<LeafNode*>(childBefore);
+        LeafNode* lf = static_cast<LeafNode*>(childBefore);
         if (!lf->values.empty()) oldFirst = lf->values.front().first;
     }
 
@@ -201,9 +203,10 @@ bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
     if (!ok) return false;
 
     Node* child = ChildNodes[idx];
+    if (child == nullptr) return false;
 
     if (wasLeaf) {
-        auto* lf = static_cast<LeafNode*>(child);
+        LeafNode* lf = dynamic_cast<LeafNode*>(child);
         if (lf && !lf->values.empty()) {
             int newFirst = lf->values.front().first;
             if (oldFirst != INT_MIN && newFirst != oldFirst) {
@@ -212,41 +215,40 @@ bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
         }
     }
 
-    bool needFix = (parent != nullptr ? child->values.size() < MIN_KEYS
-        : child->values.size() < MIN_KEYS);
+    bool needFix = child->values.size() < MIN_KEYS;
 
     if (needFix) {
-        if (auto leaf = dynamic_cast<LeafNode*>(child)) {
+        if (LeafNode* leaf = dynamic_cast<LeafNode*>(child)) {
             if (idx > 0) {
-                if (auto leftLeaf = dynamic_cast<LeafNode*>(ChildNodes[idx - 1])) {
-                    if (leftLeaf->values.size() > MIN_KEYS) {
-                        leaf->values.insert(leaf->values.begin(), leftLeaf->values.back());
-                        leftLeaf->values.pop_back();
-                        values[idx - 1] = leaf->values.front();
-                        return true;
-                    }
+                LeafNode* leftLeaf = (idx >= 1) ? dynamic_cast<LeafNode*>(ChildNodes[idx - 1]) : nullptr;
+                if (leftLeaf && leftLeaf->values.size() > MIN_KEYS) {
+                    leaf->values.insert(leaf->values.begin(), leftLeaf->values.back());
+                    leftLeaf->values.pop_back();
+                    values[idx - 1] = leaf->values.front();
+                    return true;
                 }
             }
             if (idx + 1 < ChildNodes.size()) {
-                if (auto rightLeaf = dynamic_cast<LeafNode*>(ChildNodes[idx + 1])) {
-                    if (rightLeaf->values.size() > MIN_KEYS) {
-                        leaf->values.push_back(rightLeaf->values.front());
-                        rightLeaf->values.erase(rightLeaf->values.begin());
-                        values[idx] = rightLeaf->values.front();
-                        return true;
-                    }
+                LeafNode* rightLeaf = dynamic_cast<LeafNode*>(ChildNodes[idx + 1]);
+                if (rightLeaf && rightLeaf->values.size() > MIN_KEYS) {
+                    leaf->values.push_back(rightLeaf->values.front());
+                    rightLeaf->values.erase(rightLeaf->values.begin());
+                    values[idx] = rightLeaf->values.front();
+                    return true;
                 }
             }
             if (idx > 0) {
-                auto leftLeaf = static_cast<LeafNode*>(ChildNodes[idx - 1]);
+                LeafNode* leftLeaf = dynamic_cast<LeafNode*>(ChildNodes[idx - 1]);
+                if (!leftLeaf) return true;
                 leftLeaf->values.insert(leftLeaf->values.end(), leaf->values.begin(), leaf->values.end());
                 leftLeaf->next = leaf->next;
                 delete leaf;
                 ChildNodes.erase(ChildNodes.begin() + idx);
                 values.erase(values.begin() + (idx - 1));
             }
-            else {
-                auto rightLeaf = static_cast<LeafNode*>(ChildNodes[idx + 1]);
+            else if (idx + 1 < ChildNodes.size()) {
+                LeafNode* rightLeaf = dynamic_cast<LeafNode*>(ChildNodes[idx + 1]);
+                if (!rightLeaf) return true;
                 leaf->values.insert(leaf->values.end(), rightLeaf->values.begin(), rightLeaf->values.end());
                 leaf->next = rightLeaf->next;
                 delete rightLeaf;
@@ -255,33 +257,34 @@ bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
             }
         }
         else {
-            auto childInt = static_cast<InternalNode*>(child);
+            InternalNode* childInt = dynamic_cast<InternalNode*>(child);
+            if (!childInt) return true;
+
             if (idx > 0) {
-                if (auto leftInt = dynamic_cast<InternalNode*>(ChildNodes[idx - 1])) {
-                    if (leftInt->values.size() > MIN_KEYS) {
-                        childInt->values.insert(childInt->values.begin(), values[idx - 1]);
-                        values[idx - 1] = leftInt->values.back();
-                        leftInt->values.pop_back();
-                        childInt->ChildNodes.insert(childInt->ChildNodes.begin(), leftInt->ChildNodes.back());
-                        leftInt->ChildNodes.pop_back();
-                        return true;
-                    }
+                InternalNode* leftInt = dynamic_cast<InternalNode*>(ChildNodes[idx - 1]);
+                if (leftInt && leftInt->values.size() > MIN_KEYS) {
+                    childInt->values.insert(childInt->values.begin(), values[idx - 1]);
+                    values[idx - 1] = leftInt->values.back();
+                    leftInt->values.pop_back();
+                    childInt->ChildNodes.insert(childInt->ChildNodes.begin(), leftInt->ChildNodes.back());
+                    leftInt->ChildNodes.pop_back();
+                    return true;
                 }
             }
             if (idx + 1 < ChildNodes.size()) {
-                if (auto rightInt = dynamic_cast<InternalNode*>(ChildNodes[idx + 1])) {
-                    if (rightInt->values.size() > MIN_KEYS) {
-                        childInt->values.push_back(values[idx]);
-                        values[idx] = rightInt->values.front();
-                        rightInt->values.erase(rightInt->values.begin());
-                        childInt->ChildNodes.push_back(rightInt->ChildNodes.front());
-                        rightInt->ChildNodes.erase(rightInt->ChildNodes.begin());
-                        return true;
-                    }
+                InternalNode* rightInt = dynamic_cast<InternalNode*>(ChildNodes[idx + 1]);
+                if (rightInt && rightInt->values.size() > MIN_KEYS) {
+                    childInt->values.push_back(values[idx]);
+                    values[idx] = rightInt->values.front();
+                    rightInt->values.erase(rightInt->values.begin());
+                    childInt->ChildNodes.push_back(rightInt->ChildNodes.front());
+                    rightInt->ChildNodes.erase(rightInt->ChildNodes.begin());
+                    return true;
                 }
             }
             if (idx > 0) {
-                auto leftInt = static_cast<InternalNode*>(ChildNodes[idx - 1]);
+                InternalNode* leftInt = dynamic_cast<InternalNode*>(ChildNodes[idx - 1]);
+                if (!leftInt) return true;
                 leftInt->values.push_back(values[idx - 1]);
                 leftInt->values.insert(leftInt->values.end(), childInt->values.begin(), childInt->values.end());
                 leftInt->ChildNodes.insert(leftInt->ChildNodes.end(), childInt->ChildNodes.begin(), childInt->ChildNodes.end());
@@ -289,8 +292,9 @@ bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
                 ChildNodes.erase(ChildNodes.begin() + idx);
                 values.erase(values.begin() + (idx - 1));
             }
-            else {
-                auto rightInt = static_cast<InternalNode*>(ChildNodes[idx + 1]);
+            else if (idx + 1 < ChildNodes.size()) {
+                InternalNode* rightInt = dynamic_cast<InternalNode*>(ChildNodes[idx + 1]);
+                if (!rightInt) return true;
                 childInt->values.push_back(values[idx]);
                 childInt->values.insert(childInt->values.end(), rightInt->values.begin(), rightInt->values.end());
                 childInt->ChildNodes.insert(childInt->ChildNodes.end(), rightInt->ChildNodes.begin(), rightInt->ChildNodes.end());
@@ -303,7 +307,6 @@ bool InternalNode::remove(int key, InternalNode* parent, int parentIndex) {
 
     return true;
 }
-
 
 void InternalNode::borrowFromLeft(int idx) {
     InternalNode* left = dynamic_cast<InternalNode*>(ChildNodes[idx - 1]);
@@ -342,3 +345,124 @@ void InternalNode::mergeChildren(int idx) {
     ChildNodes.erase(ChildNodes.begin() + idx + 1);
     values.erase(values.begin() + idx);
 }
+
+
+LeafNode* BPlusTree::findLeaf(int key) {
+    if (!root) return nullptr;
+
+    Node* cur = root;
+    while (cur->getClass() == std::string("Internal")) {
+        InternalNode* inode = static_cast<InternalNode*>(cur);
+        size_t idx = std::upper_bound(inode->values.begin(), inode->values.end(), key,
+            [](int k, const auto& a) { return k < a.first; })
+            - inode->values.begin();
+        if (idx >= inode->ChildNodes.size() || inode->ChildNodes[idx] == nullptr) {
+            return nullptr;
+        }
+        cur = inode->ChildNodes[idx];
+    }
+    return dynamic_cast<LeafNode*>(cur);
+}
+
+bool LeafNode::updateValue(int key, const std::vector<std::string>& newValues, int maxN) {
+    auto it = std::lower_bound(values.begin(), values.end(), key,
+        [](const auto& a, int k) { return a.first < k; });
+    if (it == values.end() || it->first != key) return false;
+
+    if (maxN < 0 || (int)newValues.size() <= maxN) {
+        it->second = newValues;
+    }
+    else {
+        it->second.assign(newValues.begin(), newValues.begin() + maxN);
+    }
+    return true;
+}
+
+bool BPlusTree::update(int key, const std::vector<std::string>& newValues, int maxN) {
+    if (!root) return false;
+    LeafNode* leaf = findLeaf(key);
+    if (!leaf) return false;
+    return leaf->updateValue(key, newValues, maxN);
+}
+
+bool BPlusTree::updateKey(int oldKey, int newKey, const std::vector<std::string>& newValues, int maxN) {
+    if (!root) return false;
+
+    if (oldKey == newKey) {
+        return update(oldKey, newValues, maxN);
+    }
+
+    const auto& oldRec = search(oldKey);
+    if (oldRec.first == -1) return false;
+
+    if (search(newKey).first != -1) return false;
+
+    std::vector<std::string> payload;
+    if (newValues.empty()) {
+        payload = oldRec.second;
+    }
+    else if (maxN < 0 || (int)newValues.size() <= maxN) {
+        payload = newValues;
+    }
+    else {
+        payload.assign(newValues.begin(), newValues.begin() + maxN);
+    }
+
+    if (!remove(oldKey)) return false;
+    if (!insert({ newKey, payload })) {
+        insert(oldRec); 
+        return false;
+    }
+    return true;
+}
+
+void BPlusTree::printRows() const {
+    if (!root) {
+        std::cout << "(empty tree)\n";
+        return;
+    }
+
+    // En soldaki yapraða in
+    const Node* current = root;
+    while (current && current->getClass() == std::string("Internal")) {
+        const InternalNode* in = static_cast<const InternalNode*>(current);
+        if (!in->ChildNodes.empty()) current = in->ChildNodes.front();
+        else break;
+    }
+
+    const LeafNode* leaf = static_cast<const LeafNode*>(current);
+
+    while (leaf) {
+        for (const auto& row : leaf->values) {
+            std::cout << row.first; // id
+            for (const auto& s : row.second) {
+                std::cout << " | " << s;
+            }
+            std::cout << "\n";
+        }
+        leaf = leaf->next;
+    }
+}
+
+std::vector<std::pair<int, std::vector<std::string>>> BPlusTree::collect(int limit) const {
+    std::vector<std::pair<int, std::vector<std::string>>> result;
+    if (!root) return result;
+    const Node* current = root;
+    while (current && current->getClass() == std::string("Internal")) {
+        const InternalNode* in = static_cast<const InternalNode*>(current);
+        if (in->ChildNodes.empty()) return result;
+        current = in->ChildNodes.front();
+    }
+    const LeafNode* leaf = static_cast<const LeafNode*>(current);
+    int cnt = 0;
+    while (leaf && (limit < 0 || cnt < limit)) {
+        for (const auto& kv : leaf->values) {
+            if (limit >= 0 && cnt >= limit) break;
+            result.push_back(kv);
+            ++cnt;
+        }
+        leaf = leaf->next;
+    }
+    return result;
+}
+

@@ -1,60 +1,74 @@
 #include "Table.h"
-#include <cctype>
+#include <iostream>
+using namespace std;
 
-static bool isInteger(const std::string& s) {
-    if (s.empty()) return false;
-    size_t i = (s[0] == '+' || s[0] == '-') ? 1 : 0;
-    if (i == s.size()) return false;
-    for (; i < s.size(); ++i) if (!std::isdigit((unsigned char)s[i])) return false;
-    return true;
+Table::Table(std::string name, std::vector<std::string> attributes)
+    : name(std::move(name)), attributes(std::move(attributes)), tree() {
 }
-static bool isFloating(const std::string& s) {
-    if (s.empty()) return false;
-    bool dot = false, digit = false;
-    size_t i = (s[0] == '+' || s[0] == '-') ? 1 : 0;
-    for (; i < s.size(); ++i) {
-        if (std::isdigit((unsigned char)s[i])) { digit = true; continue; }
-        if (s[i] == '.' && !dot) { dot = true; continue; }
-        return false;
+
+bool Table::addRow(std::vector<std::string> row) {
+    static int autoId = 0;
+    int id = ++autoId;
+    if (tree.search(id).first != -1) return false;
+    return tree.insert({ id, std::move(row) });
+}
+
+bool Table::addRow(int id, std::vector<std::string> row) {
+    static int autoId = 0;
+    if (id <= 0) id = ++autoId; else if (id > autoId) autoId = id;
+    if (tree.search(id).first != -1) return false;
+    return tree.insert({ id, std::move(row) });
+}
+void Table::printTable(int n) const {
+    auto rows = tree.collect(n);
+
+    size_t colCount = 1 + attributes.size();
+    vector<size_t> widths(colCount, 0);
+
+    widths[0] = max<size_t>(2, string("id").size());
+    for (auto& kv : rows) {
+        widths[0] = max(widths[0], to_string(kv.first).size());
     }
-    return digit;
-}
-static bool isBool(const std::string& s) {
-    return s == "true" || s == "false" || s == "0" || s == "1";
+
+    for (size_t c = 0; c < attributes.size(); ++c) {
+        widths[c + 1] = attributes[c].size();
+        for (auto& kv : rows) {
+            if (c < kv.second.size()) {
+                widths[c + 1] = max(widths[c + 1], kv.second[c].size());
+            }
+        }
+    }
+
+    cout << "| " << left << setw((int)widths[0]) << "id" << " ";
+    for (size_t c = 0; c < attributes.size(); ++c) {
+        cout << "| " << left << setw((int)widths[c + 1]) << attributes[c] << " ";
+    }
+    cout << "|\n";
+
+    for (auto& kv : rows) {
+        cout << "| " << left << setw((int)widths[0]) << kv.first << " ";
+        for (size_t c = 0; c < attributes.size(); ++c) {
+            string val = (c < kv.second.size() ? kv.second[c] : "");
+            cout << "| " << left << setw((int)widths[c + 1]) << val << " ";
+        }
+        cout << "|\n";
+    }
 }
 
-Table::Table(std::string name_,
-    std::vector<std::pair<std::string, std::string>> attributes)
-    : name(std::move(name_)), Attributes(std::move(attributes)) {
+void Table::addAttribute(std::string attribute) {
+    attributes.emplace_back(std::move(attribute));
 }
 
-bool Table::validateRowShape(const std::vector<std::string>& row) const {
-    return row.size() == Attributes.size();
+std::vector<std::string> Table::search(int id) const {
+    const auto& r = tree.search(id);
+    if (r.first == -1) return {};
+    return r.second;
 }
 
-bool Table::validateValueByType(const std::string& type, const std::string& value) const {
-    if (type == "string" || type == "STRING" || type == "text" || type == "TEXT") return true;
-    if (type == "int" || type == "INT")    return isInteger(value);
-    if (type == "float" || type == "double" || type == "FLOAT" || type == "DOUBLE") return isFloating(value);
-    if (type == "bool" || type == "BOOL")   return isBool(value);
-    return true; 
+bool Table::update(int id, std::vector<std::string> newRow) {
+    return tree.update(id, newRow, -1);
 }
 
-int Table::columnIndex(const std::string& column) const {
-    for (int i = 0; i < (int)Attributes.size(); ++i)
-        if (Attributes[i].first == column) return i;
-    return -1;
-}
-
-bool Table::insertRow(int key, const std::vector<std::string>& row) {
-    if (!validateRowShape(row)) return false;
-    for (size_t i = 0; i < row.size(); ++i)
-        if (!validateValueByType(Attributes[i].second, row[i])) return false;
-    return tree.insert({ key, row });
-}
-
-std::optional<std::vector<std::string>> Table::getRow(int key) const {
-    const auto& ref = tree.search(key);
-    if (ref.first == -1) return std::nullopt;
-    return ref.second;
+bool Table::deleteRow(int id) {
+    return tree.remove(id);
 }

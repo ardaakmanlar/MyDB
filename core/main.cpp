@@ -7,21 +7,8 @@
 
 using namespace std;
 
-static void printBanner() {
-    cout << R"(
-
-                   __  __       ____  ____  
-                  |  \/  |     |  _ \| __ ) 
-                  | |\/| |_____| | | |  _ \ 
-                  | |  | |_____| |_| | |_) |
-                  |_|  |_|     |____/|____/ 
-
-                          MyDB
-)" << "\n";
-}
 
 int main() {
-    printBanner();
 
     unordered_map<string, Table*> tables;
     Table* current = nullptr;

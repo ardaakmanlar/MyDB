@@ -3,7 +3,7 @@
 **Simple B+ Tree-based in-memory database with CLI interface**  
 
 
-<img width="1139" height="309" alt="image" src="https://github.com/user-attachments/assets/019b6285-8e56-4d6a-b1c2-905f3fe10902" />
+<img width="1036" height="948" alt="image" src="https://github.com/user-attachments/assets/86b6e2d9-cc49-4632-b395-529af92e1ec2" />
 
 
 ## Example Usage  
@@ -11,8 +11,12 @@
 
 
 
-## Build & Run  
+## Build & Run
+
+Write these commands one by one in your terminal:
 
 ```bash
+git clone https://github.com/username/MyDB.git
+cd MyDB/core
 g++ -std=c++14 -o myDB.exe main.cpp Table.cpp BPlusTree.cpp
-
+./myDB.exe
